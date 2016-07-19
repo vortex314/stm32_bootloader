@@ -5,7 +5,8 @@
 ## Add your source directories here separated by space
 # MODULES = app
 # EXTRA_INCDIR = include
-
+EXTRA_INCDIR = include /home/lieven/workspace/Common/inc
+USER_CFLAGS = -DSMING
 ## ESP_HOME sets the path where ESP tools and SDK are located.
 ## Windows:
 # ESP_HOME = c:/Espressif
@@ -36,6 +37,6 @@
 ## SPIFFS options
 DISABLE_SPIFFS = 1
 # SPIFF_FILES = files
-EXTRA_INCDIR = include /home/lieven/workspace/Common/inc
+
 VERBOSE = 1
 

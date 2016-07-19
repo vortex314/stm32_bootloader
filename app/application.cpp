@@ -35,7 +35,7 @@ void blink() {
 
 void mqttLog(char* s, uint32_t length) {
 	if (mqtt.getConnectionState() == eTCS_Connected)
-		mqtt.publish("stm32/out/log", s);
+		mqtt.publish("stm32/log", s);
 }
 
 Bytes bytesIn(300);
@@ -45,6 +45,7 @@ char dataOut[400];
 void handle(JsonObject& resp, JsonObject& req) {
 	String dataIn = req["data"];
 	int len = base64_decode(dataIn.length(),dataIn.c_str(),300,bytesIn.data());	//
+	LOGF(" length : %d ",len);
 	bytesIn.length(len);
 	resp["error"] = Stm32::engine(bytesOut,bytesIn);
 	len = base64_encode(bytesOut.length(),bytesOut.data(),400,dataOut);
@@ -58,9 +59,8 @@ void handle(JsonObject& resp, JsonObject& req) {
 void publishMessage() {
 	if (mqtt.getConnectionState() != eTCS_Connected)
 		startMqttClient(); // Auto reconnect
-	mqtt.setKeepAlive(5);
 	String str(millis());
-	mqtt.publish("stm32/out/clock", str); // or publishWithQoS
+	mqtt.publish("stm32/clock", str); // or publishWithQoS
 
 }
 
@@ -68,16 +68,16 @@ void publishMessage() {
 void onMessageReceived(String topic, String message) {
 	LOGF(" recv %s : %s \n", topic.c_str(), message.c_str());
 
-	if (topic == "stm32/in/cmd") {
+	if (topic == "stm32/in/request") {
 		StaticJsonBuffer<200> request;
 		StaticJsonBuffer<200> reply;
 		JsonObject& req = request.parseObject(message);
-		JsonObject& repl = request.createObject();
+		JsonObject& repl = reply.createObject();
 		handle(repl, req);
 		String str;
 		repl.printTo(str);
-		mqtt.publish("stm32/out/cmd", str);
-		Serial.printf(" out stm32/out/cmd : %s\n", str.c_str());
+		mqtt.publish("stm32/reply", str);
+		LOGF(" out stm32/reply : %s\n", str.c_str());
 	} else {
 		LOGF(" unknown topic received %s ", topic.c_str());
 	}
@@ -87,17 +87,21 @@ void onMessageReceived(String topic, String message) {
 // Run MQTT client
 void startMqttClient() {
 	if (!mqtt.setWill("stm32/alive", "false", 1, true)) {
-		Serial.println(
+		LOGF(
 				"Unable to set the last will and testament. Most probably there is not enough memory on the device.");
 	}
 
 	mqtt.connect("esp8266");
 	mqtt.subscribe("stm32/in/#");
+	Stm32::begin();
+	Log.setOutput(mqttLog);
+	mqtt.setKeepAlive(5);
+
 }
 
 // Will be called when WiFi station was connected to AP
 void onWifiConnected() {
-	Serial.println("Wifi CONNECTED.");
+	LOGF("Wifi CONNECTED.");
 
 	// Run MQTT client
 	startMqttClient();
@@ -108,10 +112,11 @@ void onWifiConnected() {
 
 // Will be called when WiFi station timeout was reached
 void wifiDisconnected() {
-	Serial.println("Wifi NOT CONNECTED.");
+	LOGF("Wifi NOT CONNECTED.");
 }
 
 void init() {
+	LOGF(" Starting...");
 	pinMode(LED_PIN, OUTPUT);
 	ledTimer.initializeMs(1000, blink).start();
 

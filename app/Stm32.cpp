@@ -173,6 +173,12 @@ Erc Stm32::engine(Bytes& reply, Bytes& req) {
 			}
 			break;
 		}
+		default:{
+			LOGF(" UKNOWN COMMAND" );
+			error = EINVAL;
+			goto END;
+			break;
+		}
 		}
 	}
 	END: return error;

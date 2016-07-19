@@ -16,6 +16,6 @@ the data is a strean of byte codes steering the driver
 <prefix>/stm32/<topic> : topics to which the device/driver is publishing data
 Topics :
 log : log output of device
-reply : JSON object containng result data and error code
+reply : JSON object containing result data and error code
 
 
